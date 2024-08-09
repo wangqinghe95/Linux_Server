@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <unistd.h>
 #include <errno.h>
+#include "MyChannel.hpp"
 
 #define READ_BUFFER_SIZE 1024
 
@@ -18,31 +19,34 @@ int main()
     serv_socket->listen();
     serv_socket->setnonblocking();
 
-    MyEpoll* my_epoll = new MyEpoll();
-    my_epoll->addFd(serv_socket->getFd(), EPOLLIN | EPOLLET);
+    MyEpoll* server_epoll = new MyEpoll();
+    // server_epoll->addFd(serv_socket->getFd(), EPOLLIN | EPOLLET);
 
+    MyChannel* server_channel = new MyChannel(server_epoll, serv_socket->getFd());
+    server_channel->enableReading();
     while (true)
     {
-        printf("epoll_wait\n");
-        std::vector<epoll_event> events = my_epoll->poll();
-        int nfd = events.size();
-        printf("nfd : %d\n", nfd);
+        std::vector<MyChannel*> activeChannel = server_epoll->poll();
+        int nfd = activeChannel.size();
         for(int i = 0; i < nfd; ++i) {
-            if(events[i].data.fd == serv_socket->getFd()) {
+            int chfd = activeChannel[i]->getFd();
+            if(chfd == serv_socket->getFd()) {
                 InetAddress* client_addr = new InetAddress();
                 int client_fd = serv_socket->accept(client_addr);
                 MySocket* client_socket = new MySocket(client_fd);
                 printf("new client fd:%d IP:%s Port:%d\n", client_fd, client_addr->getIP(), client_addr->getPort());
                 client_socket->setnonblocking();
-                my_epoll->addFd(client_fd, EPOLLIN | EPOLLET);
+                // server_epoll->addFd(client_fd, EPOLLIN | EPOLLET);
+
+                MyChannel *client_channel = new MyChannel(server_epoll, client_fd);
+                client_channel->enableReading();
 
                 delete client_addr;
-                delete client_socket;    // delete socket will cancel listening fd of client_socket
-                printf("if end\n"); 
+                delete client_socket;    // fd in MySocket class will close if delete this, so....
             }
-            else if(events[i].events & EPOLLIN) {
+            else if(activeChannel[i]->getEvents() & EPOLLIN) {
                 printf("handleReadevents\n");
-                handleReadEvent(events[i].data.fd);
+                handleReadEvent(chfd);
             }
             else {
                 printf("something else happened.\n");

@@ -8,6 +8,7 @@ MySocket::MySocket() : fd(-1)
 {
     fd = socket(AF_INET, SOCK_STREAM, 0);
     errif(fd == -1, "socket create error");
+    DEBUG("Socket fd:%d", fd);
 }
 MySocket::MySocket(int _fd) : fd(_fd) 
 {

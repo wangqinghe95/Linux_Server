@@ -3,6 +3,8 @@
 #include <sys/epoll.h>
 #include <vector>
 
+class MyChannel;
+
 class MyEpoll
 {
 private:
@@ -13,7 +15,9 @@ public:
     MyEpoll();
 
     void addFd(int fd, uint32_t op);
-    std::vector<epoll_event> poll(int timeout = -1);
+    void updateChannel(MyChannel*);
+    // std::vector<epoll_event> poll(int timeout = -1);
+    std::vector<MyChannel*> poll(int timeout = -1);
 };
 
 #endif // !MY_EPOLL_HPP

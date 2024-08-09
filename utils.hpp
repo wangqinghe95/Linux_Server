@@ -2,6 +2,7 @@
 
 #include <cstdlib>
 #include <cstring>
+#include "Logger.hpp"
 
 void errif(bool condition, const char* errmsg);
 
