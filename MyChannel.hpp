@@ -1,28 +1,35 @@
 #ifndef CHANNEL_HPP__
 
 #include <sys/epoll.h>
+#include <functional>
 
-class MyEpoll;
+class EventLoop;
 
 class MyChannel
 {
 public:
-    MyChannel(MyEpoll* _ep, int _fd);
+    MyChannel(EventLoop* _loop, int _fd);
     ~MyChannel();
 
     void enableReading();
-    int getFd();
+
     uint32_t getEvents();
-    uint32_t getRevetns();
+    int getFd();
     bool getInEpoll();
+    uint32_t getRevetns();
+
+    void handleEvent();
+
+    void setCallback(std::function<void()>);
     void setInEpoll();
     void setRevetns(uint32_t);
 private:
-    MyEpoll *ep;
+    EventLoop *loop;
     int fd;
     uint32_t events;
     uint32_t revents;
     bool inEpoll;
+    std::function<void()> callback;
 };
 
 #endif // !CHANNEL_HPP__

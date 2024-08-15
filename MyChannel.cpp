@@ -1,9 +1,9 @@
 #include "MyChannel.hpp"
-#include "MyEpoll.hpp"
+#include "EventLoop.hpp"
 #include "utils.hpp"
 
-MyChannel::MyChannel(MyEpoll* _ep, int _fd) 
-                    : ep(_ep)
+MyChannel::MyChannel(EventLoop* _loop, int _fd) 
+                    : loop(_loop)
                     , fd(_fd)
                     , events(0)
                     , revents(0)
@@ -18,7 +18,7 @@ void MyChannel::enableReading()
 {
     DEBUG("MyChannel ");
     events = EPOLLIN | EPOLLET;
-    ep->updateChannel(this);
+    loop->updateChannel(this);
 }
 int MyChannel::getFd()
 {
@@ -36,6 +36,17 @@ bool MyChannel::getInEpoll()
 {
     return inEpoll;
 }
+
+void MyChannel::handleEvent()
+{
+    callback();
+}
+
+void MyChannel::setCallback(std::function<void()> _cb)
+{
+    callback = _cb;
+}
+
 void MyChannel::setInEpoll()
 {
     inEpoll = true;

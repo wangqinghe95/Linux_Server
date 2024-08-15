@@ -1,17 +1,15 @@
+#include "Server.hpp"
+#include "EventLoop.hpp"
 #include "MySocket.hpp"
-// #include "InetAddress.hpp"
-#include "MyEpoll.hpp"
+#include "MyChannel.hpp"
+
 #include "utils.hpp"
-#include <cstdio>
 #include <unistd.h>
 #include <errno.h>
-#include "MyChannel.hpp"
 
 #define READ_BUFFER_SIZE 1024
 
-void handleReadEvent(int sockfd);
-
-int main()
+Server::Server(EventLoop* _loop): loop(_loop)
 {
     MySocket* serv_socket = new MySocket();
     InetAddress* serv_address = new InetAddress("127.0.0.1", 8888);
@@ -19,47 +17,17 @@ int main()
     serv_socket->listen();
     serv_socket->setnonblocking();
 
-    MyEpoll* server_epoll = new MyEpoll();
-    // server_epoll->addFd(serv_socket->getFd(), EPOLLIN | EPOLLET);
-
-    MyChannel* server_channel = new MyChannel(server_epoll, serv_socket->getFd());
+    MyChannel* server_channel = new MyChannel(loop, serv_socket->getFd());
     server_channel->enableReading();
-    while (true)
-    {
-        std::vector<MyChannel*> activeChannel = server_epoll->poll();
-        int nfd = activeChannel.size();
-        for(int i = 0; i < nfd; ++i) {
-            int chfd = activeChannel[i]->getFd();
-            if(chfd == serv_socket->getFd()) {
-                InetAddress* client_addr = new InetAddress();
-                int client_fd = serv_socket->accept(client_addr);
-                MySocket* client_socket = new MySocket(client_fd);
-                printf("new client fd:%d IP:%s Port:%d\n", client_fd, client_addr->getIP(), client_addr->getPort());
-                client_socket->setnonblocking();
-                // server_epoll->addFd(client_fd, EPOLLIN | EPOLLET);
-
-                MyChannel *client_channel = new MyChannel(server_epoll, client_fd);
-                client_channel->enableReading();
-
-                delete client_addr;
-                delete client_socket;    // fd in MySocket class will close if delete this, so....
-            }
-            else if(activeChannel[i]->getEvents() & EPOLLIN) {
-                printf("handleReadevents\n");
-                handleReadEvent(chfd);
-            }
-            else {
-                printf("something else happened.\n");
-            }
-        }
-    }
-
-    delete serv_address;
-    delete serv_socket;
-    return 0;    
+    std::function<void()> cb = std::bind(&Server::connectNewRquest, this, serv_socket);
+    server_channel->setCallback(cb);
 }
 
-void handleReadEvent(int sockfd)
+Server::~Server()
+{
+}
+
+void Server::handleReadEvent(int sockfd)
 {
     char buf[READ_BUFFER_SIZE];
     while (true)
@@ -67,29 +35,45 @@ void handleReadEvent(int sockfd)
         bzero(buf, sizeof(READ_BUFFER_SIZE));
         ssize_t read_bytes = read(sockfd, buf, sizeof(buf));
         if(read_bytes > 0) {
-            printf("message from client fd %d : %s\n", sockfd, buf);
+            DEBUG("message from client fd : ", sockfd, " message : ", buf);
             write(sockfd, buf, sizeof(buf));
         }
         else if(read_bytes == 0) {
-            printf("EOF, client fd %d disconnected\n", sockfd);
-            close(sockfd);
+            DEBUG("EOF, client fd", sockfd, " disconnected\n");
+            close(sockfd);  // socked closed will be removed from epoll tree automatically
             break;
         }
         else {
             if(read_bytes == -1) {
                 if(errno == EINTR) {
-                    printf("continue reading\n");
+                    DEBUG("continue reading\n");
                     continue;
                 }
                 else if(errno == EAGAIN || errno == EWOULDBLOCK) {
-                    printf("finish reading once, and res number : %d\n", errno);
+                    DEBUG("finish reading once, and res number : ", errno);
                     break;
                 }
                 else {
-                    printf("errno other something : %d\n", errno);
+                    DEBUG("errno other something : ", errno);
                 }
             }
         }
     }
-    
+}
+void Server::connectNewRquest(MySocket* serv_socket)
+{
+    InetAddress* client_addr = new InetAddress();
+    int client_fd = serv_socket->accept(client_addr);
+    MySocket* client_socket = new MySocket(client_fd);
+    DEBUG("new client fd:", client_fd, " IP:", client_addr->getIP() , " Port:", client_addr->getPort());
+    client_socket->setnonblocking();
+
+    MyChannel *client_channel = new MyChannel(loop, client_fd);
+    client_channel->enableReading();
+    std::function<void()> cb = std::bind(&Server::handleReadEvent, this, client_fd);
+    client_channel->setCallback(cb);
+
+    delete client_addr;
+    delete client_socket;    // fd in MySocket class will close if delete this, so....
+
 }

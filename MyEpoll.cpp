@@ -34,6 +34,19 @@ void MyEpoll::addFd(int fd, uint32_t op)
     errif(res == -1, "epoll add event error");
 }
 
+/**
+ * manage file source of MySocket, fd, to solve source leak in Server.cpp::connectNewRquest()
+ * fd will be created by MySocket()
+ *          added into addFd()
+ *          needed to delete in deleteFd()
+ */
+void MyEpoll::deleteFd(int fd)
+{
+    if(fd == -1) return;
+    //int res = epoll_ctl(epfd, EPOLL_CTL_DEL, fd, NULL);
+    close(fd);
+}
+
 /*
 std::vector<epoll_event> MyEpoll::poll(int timeout)
 {
