@@ -16,7 +16,6 @@ MyChannel::~MyChannel()
 
 void MyChannel::enableReading()
 {
-    DEBUG("MyChannel ");
     events = EPOLLIN | EPOLLET;
     loop->updateChannel(this);
 }

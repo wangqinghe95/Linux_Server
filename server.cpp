@@ -2,8 +2,9 @@
 #include "EventLoop.hpp"
 #include "MySocket.hpp"
 #include "MyChannel.hpp"
-
+#include "Acceptor.hpp"
 #include "utils.hpp"
+#include "InetAddress.hpp"
 #include <unistd.h>
 #include <errno.h>
 
@@ -11,6 +12,10 @@
 
 Server::Server(EventLoop* _loop): loop(_loop)
 {
+    acceptor = new Acceptor(loop);
+    std::function<void(MySocket*)> cb = std::bind(&Server::connectNewRquest, this, std::placeholders::_1);
+    acceptor->setNewConnectionCallback(cb);
+    /*
     MySocket* serv_socket = new MySocket();
     InetAddress* serv_address = new InetAddress("127.0.0.1", 8888);
     serv_socket->bind(serv_address);
@@ -20,15 +25,17 @@ Server::Server(EventLoop* _loop): loop(_loop)
     MyChannel* server_channel = new MyChannel(loop, serv_socket->getFd());
     server_channel->enableReading();
     std::function<void()> cb = std::bind(&Server::connectNewRquest, this, serv_socket);
-    server_channel->setCallback(cb);
+    server_channel->setCallback(cb);*/
 }
 
 Server::~Server()
 {
+    delete acceptor;
 }
 
 void Server::handleReadEvent(int sockfd)
 {
+    INFO(__func__);
     char buf[READ_BUFFER_SIZE];
     while (true)
     {
@@ -39,22 +46,22 @@ void Server::handleReadEvent(int sockfd)
             write(sockfd, buf, sizeof(buf));
         }
         else if(read_bytes == 0) {
-            DEBUG("EOF, client fd", sockfd, " disconnected\n");
+            INFO("EOF, client fd", sockfd, " disconnected\n");
             close(sockfd);  // socked closed will be removed from epoll tree automatically
             break;
         }
         else {
             if(read_bytes == -1) {
                 if(errno == EINTR) {
-                    DEBUG("continue reading\n");
+                    INFO("continue reading\n");
                     continue;
                 }
                 else if(errno == EAGAIN || errno == EWOULDBLOCK) {
-                    DEBUG("finish reading once, and res number : ", errno);
+                    INFO("finish reading once, and res number : ", errno);
                     break;
                 }
                 else {
-                    DEBUG("errno other something : ", errno);
+                    INFO("errno other something : ", errno);
                 }
             }
         }
@@ -62,6 +69,7 @@ void Server::handleReadEvent(int sockfd)
 }
 void Server::connectNewRquest(MySocket* serv_socket)
 {
+    INFO(__func__);
     InetAddress* client_addr = new InetAddress();
     int client_fd = serv_socket->accept(client_addr);
     MySocket* client_socket = new MySocket(client_fd);
@@ -75,5 +83,4 @@ void Server::connectNewRquest(MySocket* serv_socket)
 
     delete client_addr;
     delete client_socket;    // fd in MySocket class will close if delete this, so....
-
 }

@@ -1,4 +1,4 @@
-commonFile := InetAddress.cpp MyEpoll.cpp MySocket.cpp utils.cpp MyChannel.cpp EventLoop.cpp Server.cpp
+commonFile := InetAddress.cpp MyEpoll.cpp MySocket.cpp utils.cpp MyChannel.cpp EventLoop.cpp Server.cpp Acceptor.cpp
 logFile := Logger.cpp
 
 all: server client
@@ -8,7 +8,10 @@ server:
 client:
 	g++ client.cpp $(logFile) -o client
 
-.PHONY: clean
+.PHONY: clean cleanall
 
 clean:
-	rm server client
+	rm server
+
+cleanall:
+	rm client server

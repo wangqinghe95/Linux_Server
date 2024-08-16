@@ -1,8 +1,6 @@
 #ifndef SOCKET_HPP__
 
-#include "inetaddress.hpp"
-
-// class InetAddress;
+class InetAddress;
 
 class MySocket
 {

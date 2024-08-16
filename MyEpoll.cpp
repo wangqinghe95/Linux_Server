@@ -10,7 +10,7 @@ MyEpoll::MyEpoll() : epfd(-1), events(nullptr)
 {
     epfd = epoll_create1(0);
     errif(epfd == -1, "epfd create error");
-    DEBUG("Epoll fd:%d", epfd);
+    INFO("Epoll fd:%d", epfd);
 
     events = new epoll_event[MAX_EVENTS];
     bzero(events, sizeof(events));
@@ -62,7 +62,7 @@ std::vector<epoll_event> MyEpoll::poll(int timeout)
 */
 void MyEpoll::updateChannel(MyChannel* channel)
 {
-    DEBUG("MyEpoll ");
+    INFO(__func__);
     int fd = channel->getFd();
     struct epoll_event ev;
     bzero(&ev, sizeof(ev));
@@ -73,7 +73,7 @@ void MyEpoll::updateChannel(MyChannel* channel)
         // errif(epoll_ctl(epfd, EPOLL_CTL_ADD, fd, &ev) == -1, "epoll add error");
         int res = epoll_ctl(epfd, EPOLL_CTL_ADD, fd, &ev);
         if(res == -1) {
-            DEBUG("epoll add error, fd:%s epfd:%d", fd, epfd);
+            INFO("epoll add error, fd:%s epfd:%d", fd, epfd);
             exit(EXIT_FAILURE);
         }
         channel->setInEpoll();
@@ -86,8 +86,9 @@ void MyEpoll::updateChannel(MyChannel* channel)
 std::vector<MyChannel*> MyEpoll::poll(int timeout)
 {
     std::vector<MyChannel*> active_event;
+    DEBUG("Wait client connect or send message...");
     int n_fds = epoll_wait(epfd, events, MAX_EVENTS, timeout);
-    errif(n_fds == -1, "epoll wait error");
+    ERROR(n_fds == -1, "epoll wait error");
     for(int i = 0; i < n_fds; ++i) {
         // active_event.push_back(events[i]);
         MyChannel* ch = (MyChannel*)events[i].data.ptr;

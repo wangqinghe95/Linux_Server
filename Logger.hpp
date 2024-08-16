@@ -20,6 +20,8 @@ enum class LogLevel
     FATAL
 };
 
+#define PRINT_LEVEL (LogLevel::DEBUG)
+
 /*
  * [time][log_level][file_name:function_name:line]
 */
@@ -52,7 +54,8 @@ public:
         getArgs(oss, args...);
         log_message += oss.str();
 
-        std::cout << log_message;
+        if(log_level >= PRINT_LEVEL)
+            std::cout << log_message;
     }
 private:
 
