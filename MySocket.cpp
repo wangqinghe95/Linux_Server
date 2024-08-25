@@ -8,41 +8,60 @@
 MySocket::MySocket() : fd(-1)
 {
     fd = socket(AF_INET, SOCK_STREAM, 0);
-    ERROR(fd == -1, "socket create error");
+    if(fd == -1) ERROR("socket create error"); 
 }
 MySocket::MySocket(int _fd) : fd(_fd) 
 {
-    ERROR(fd == -1, "socket create error");   
+    if(fd == -1) {
+        ERROR("socket create error"); 
+    }
 }
 MySocket::~MySocket()
 {
+    DEBUG("~MySocket");
     // if(fd != -1) {
     //     close(fd);
     //     fd = -1;
     // }
 }
 
-void MySocket::bind(InetAddress* addr)
+void MySocket::bind(InetAddress* _addr)
 {
-    int bind_res = ::bind(fd, (sockaddr*)&addr->addr, addr->addr_len);
-    ERROR(bind_res == -1, "socket bind error");   
+    sockaddr_in addr = _addr->getAddr();
+    socklen_t addr_len = _addr->getAddrlen();
+    
+    /*
+     if using "_addr" as parameters of ::bind
+     client can't bind server, why ? 
+     addr and addr_len are temporay varieties?
+    */
+    int bind_res = ::bind(fd, (sockaddr*)&addr, addr_len);
+
+    if(bind_res == -1) {
+        ERROR("socket bind error");
+    }  
 }
 void MySocket::listen()
 {
     int listen_res = ::listen(fd, SOMAXCONN);
-    ERROR(listen_res == -1, "socket listen error");    
+    // ERROR(listen_res == -1, "socket listen error");
+    if(listen_res == -1) ERROR("socket listen error");   
 }
 void MySocket::setnonblocking()
 {
     fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK);    
 }
 
-int MySocket::accept(InetAddress* addr)
+int MySocket::accept(InetAddress* _addr)
 {
-    int client_fd = ::accept(fd, (sockaddr*)&addr->addr, &addr->addr_len);
-    ERROR(client_fd == -1, "socket accept error");
+    struct sockaddr_in addr;
+    socklen_t len_sock_addr = sizeof(addr);
+    bzero(&addr, sizeof(addr));
+    int client_fd = ::accept(fd, (sockaddr*)&addr, &len_sock_addr);
+    // int client_fd = ::accept(fd, (sockaddr*)&_addr->addr, &_addr->addr_len);
+    if(client_fd == -1) ERROR("socket accept error");
     
-    // printf("new client fd %d! IP: %s Port:%d\n", client_fd, inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
+    _addr->setAdrr(addr, len_sock_addr);
     return client_fd;
 }
 int MySocket::getFd()

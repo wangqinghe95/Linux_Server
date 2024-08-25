@@ -5,6 +5,7 @@
 #include "Acceptor.hpp"
 #include "utils.hpp"
 #include "InetAddress.hpp"
+#include "Connection.hpp"
 #include <unistd.h>
 #include <errno.h>
 
@@ -33,8 +34,24 @@ Server::~Server()
     delete acceptor;
 }
 
+void Server::connectNewRquest(MySocket* serv_socket)
+{
+    Connection* conn = new Connection(loop, serv_socket);
+    std::function<void(MySocket*)> cb = std::bind(&Server::deleteConnection, this, std::placeholders::_1);
+    conn->setDeleteConnectionCallback(cb);
+    connections[serv_socket->getFd()] = conn;
+}
+
+void Server::deleteConnection(MySocket* sock)
+{
+    Connection* conn = connections[sock->getFd()];
+    connections.erase(sock->getFd());
+    delete conn;
+}
+
 void Server::handleReadEvent(int sockfd)
 {
+    /*
     INFO(__func__);
     char buf[READ_BUFFER_SIZE];
     while (true)
@@ -66,7 +83,9 @@ void Server::handleReadEvent(int sockfd)
             }
         }
     }
-}
+    */
+}   
+/*
 void Server::connectNewRquest(MySocket* serv_socket)
 {
     INFO(__func__);
@@ -83,4 +102,5 @@ void Server::connectNewRquest(MySocket* serv_socket)
 
     delete client_addr;
     delete client_socket;    // fd in MySocket class will close if delete this, so....
-}
+    
+}*/

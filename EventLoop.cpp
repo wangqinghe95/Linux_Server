@@ -16,14 +16,12 @@ void EventLoop::loop()
 {
     while (!quit)
     {
-        INFO(__func__);
         std::vector<MyChannel*> chs;
         chs = ep->poll();
         for(auto it = chs.begin(); it != chs.end(); ++it) {
             (*it)->handleEvent();
         }
     }
-    
 }
 void EventLoop::updateChannel(MyChannel* _ch)
 {

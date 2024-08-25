@@ -27,3 +27,18 @@ const int InetAddress::getPort()
 {
     return ntohs(addr.sin_port);
 }
+
+void InetAddress::setAdrr(sockaddr_in _addr, socklen_t _addr_len)
+{
+    addr = _addr;
+    addr_len = _addr_len;
+}
+
+sockaddr_in InetAddress::getAddr()
+{
+    return addr;
+}
+socklen_t InetAddress::getAddrlen()
+{
+    return addr_len;
+}

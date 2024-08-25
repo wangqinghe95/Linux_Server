@@ -18,6 +18,7 @@ MyEpoll::MyEpoll() : epfd(-1), events(nullptr)
 
 MyEpoll::~MyEpoll()
 {
+    DEBUG("~MyEpoll");
     if(epfd != -1) close(epfd);
     delete [] events;
 }
@@ -88,7 +89,7 @@ std::vector<MyChannel*> MyEpoll::poll(int timeout)
     std::vector<MyChannel*> active_event;
     DEBUG("Wait client connect or send message...");
     int n_fds = epoll_wait(epfd, events, MAX_EVENTS, timeout);
-    ERROR(n_fds == -1, "epoll wait error");
+    // ERROR(n_fds == -1, "epoll wait error");
     for(int i = 0; i < n_fds; ++i) {
         // active_event.push_back(events[i]);
         MyChannel* ch = (MyChannel*)events[i].data.ptr;
