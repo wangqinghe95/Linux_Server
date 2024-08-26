@@ -1,4 +1,4 @@
-commonFile := InetAddress.cpp MyEpoll.cpp MySocket.cpp utils.cpp MyChannel.cpp EventLoop.cpp Server.cpp Acceptor.cpp Connection.cpp
+commonFile := InetAddress.cpp MyEpoll.cpp MySocket.cpp utils.cpp MyChannel.cpp EventLoop.cpp Server.cpp Acceptor.cpp Connection.cpp Buffer.cpp
 logFile := Logger.cpp
 
 all: server client
