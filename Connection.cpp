@@ -12,6 +12,7 @@
 Connection::Connection(EventLoop *_loop, MySocket* _sock)
                         : loop(_loop), sock(_sock), channel(nullptr)
 {
+    INFO("fd:", sock->getFd());
     channel = new MyChannel(loop, sock->getFd());
     std::function<void()> cb = std::bind(&Connection::echo, this, sock->getFd());
     channel->setCallback(cb);

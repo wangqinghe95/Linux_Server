@@ -38,7 +38,7 @@ bool MyChannel::getInEpoll()
 
 void MyChannel::handleEvent()
 {
-    callback();
+    loop->addFunc(callback);
 }
 
 void MyChannel::setCallback(std::function<void()> _cb)

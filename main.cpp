@@ -3,7 +3,7 @@
 #include "utils.hpp"
 int main()
 {
-    DEBUG("Server version 20240826_01");
+    DEBUG("Server version 20240827_01");
     EventLoop* loop = new EventLoop();
     Server* server = new Server(loop);
 

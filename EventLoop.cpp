@@ -2,14 +2,17 @@
 #include "MyEpoll.hpp"
 #include "MyChannel.hpp"
 #include "utils.hpp"
+#include "ThreadPool.hpp"
 
 EventLoop::EventLoop() : ep(nullptr), quit(false)
 {
     ep = new MyEpoll();
+    threadpool = new ThreadPool();
 }
 EventLoop::~EventLoop()
 {
     if(ep != nullptr) delete ep;
+    if(threadpool != nullptr) delete threadpool;
 }
 
 void EventLoop::loop()
@@ -26,4 +29,9 @@ void EventLoop::loop()
 void EventLoop::updateChannel(MyChannel* _ch)
 {
     ep->updateChannel(_ch);
+}
+
+void EventLoop::addFunc(std::function<void()> func)
+{
+    threadpool->addTask(func);
 }

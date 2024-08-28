@@ -13,7 +13,7 @@ MySocket::MySocket() : fd(-1)
 MySocket::MySocket(int _fd) : fd(_fd) 
 {
     if(fd == -1) {
-        ERROR("socket create error"); 
+        ERROR("socket create error, fd:",fd); 
     }
 }
 MySocket::~MySocket()
@@ -38,7 +38,7 @@ void MySocket::bind(InetAddress* _addr)
     int bind_res = ::bind(fd, (sockaddr*)&addr, addr_len);
 
     if(bind_res == -1) {
-        ERROR("socket bind error");
+        ERROR("socket bind error,fd",fd);
     }  
 }
 void MySocket::listen()
@@ -59,7 +59,7 @@ int MySocket::accept(InetAddress* _addr)
     bzero(&addr, sizeof(addr));
     int client_fd = ::accept(fd, (sockaddr*)&addr, &len_sock_addr);
     // int client_fd = ::accept(fd, (sockaddr*)&_addr->addr, &_addr->addr_len);
-    if(client_fd == -1) ERROR("socket accept error");
+    if(client_fd == -1) ERROR("socket accept error, fd",fd);
     
     _addr->setAdrr(addr, len_sock_addr);
     return client_fd;

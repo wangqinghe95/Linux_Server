@@ -37,7 +37,6 @@ void Acceptor::acceptConnection()
     newConnectionCallback(client_socket);
 
     delete client_address;
-
 }
 void Acceptor::setNewConnectionCallback(std::function<void(MySocket*)> _cb)
 {
