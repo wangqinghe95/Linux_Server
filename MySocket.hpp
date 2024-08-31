@@ -11,12 +11,12 @@ public:
     MySocket(int _fd);
     ~MySocket();
 
+    int accept(InetAddress*);
     void bind(InetAddress*);
+    void connect(InetAddress*);
+    int getFd();
     void listen();
     void setnonblocking();
-
-    int accept(InetAddress*);
-    int getFd();
 };
 
 #endif // !SOCKET_HPP__

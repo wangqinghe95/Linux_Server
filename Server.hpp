@@ -17,9 +17,8 @@ public:
     Server(EventLoop* _loop);
     ~Server();
 
-    void connectNewRquest(MySocket* serv_socket);
-    void deleteConnection(MySocket* sock);
-    void handleReadEvent(int);
+    void connectNewRquest(MySocket*);
+    void deleteConnection(int sockfd);
 };
 
 

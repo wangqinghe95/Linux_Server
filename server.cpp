@@ -23,18 +23,26 @@ Server::~Server()
     delete acceptor;
 }
 
-void Server::connectNewRquest(MySocket* serv_socket)
+void Server::connectNewRquest(MySocket* _socket)
 {
-    INFO("socket fd:", serv_socket->getFd());
-    Connection* conn = new Connection(loop, serv_socket);
-    std::function<void(MySocket*)> cb = std::bind(&Server::deleteConnection, this, std::placeholders::_1);
-    conn->setDeleteConnectionCallback(cb);
-    connections[serv_socket->getFd()] = conn;
+    INFO("socket fd:", _socket->getFd());
+    if(-1 != _socket->getFd()) {
+        Connection* conn = new Connection(loop, _socket);
+        std::function<void(int)> cb = std::bind(&Server::deleteConnection, this, std::placeholders::_1);
+        conn->setDeleteConnectionCallback(cb);
+        connections[_socket->getFd()] = conn;
+    }
 }
 
-void Server::deleteConnection(MySocket* sock)
+void Server::deleteConnection(int sockfd)
 {
-    Connection* conn = connections[sock->getFd()];
-    connections.erase(sock->getFd());
-    delete conn;
+    if(-1 != sockfd) {
+        auto it = connections.find(sockfd);
+        if(it != connections.end()) {
+            Connection* conn = connections[sockfd];
+            connections.erase(sockfd);
+            // delete conn;
+            close(sockfd);
+        }
+    }
 }

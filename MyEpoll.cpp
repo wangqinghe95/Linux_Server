@@ -22,27 +22,12 @@ MyEpoll::~MyEpoll()
     delete [] events;
 }
 
-
-void MyEpoll::addFd(int fd, uint32_t op)
+void MyEpoll::deleteChannel(MyChannel* _channel)
 {
-    struct epoll_event ev;
-    bzero(&ev, sizeof(ev));
-    ev.data.fd = fd;
-    ev.events = EPOLLIN | EPOLLET;
-    int res = epoll_ctl(epfd, EPOLL_CTL_ADD, fd, &ev);
-    errif(res == -1, "epoll add event error");
-}
-
-/**
- * manage file source of MySocket, fd, to solve source leak in Server.cpp::connectNewRquest()
- * fd will be created by MySocket()
- *          added into addFd()
- *          needed to delete in deleteFd()
- */
-void MyEpoll::deleteFd(int fd)
-{
-    if(fd == -1) return;
-    close(fd);
+    int fd = _channel->getFd();
+    int res = epoll_ctl(epfd, EPOLL_CTL_DEL, fd, NULL);
+    if(-1 == res) ERROR("epoll delete error, epfd:", epfd);
+    _channel->setInEpoll(false);
 }
 
 void MyEpoll::updateChannel(MyChannel* channel)
@@ -79,7 +64,7 @@ std::vector<MyChannel*> MyEpoll::poll(int timeout)
     for(int i = 0; i < n_fds; ++i) {
         // active_event.push_back(events[i]);
         MyChannel* ch = (MyChannel*)events[i].data.ptr;
-        ch->setRevetns(events[i].events);
+        ch->setReady(events[i].events);
         active_event.push_back(ch);
     }
 

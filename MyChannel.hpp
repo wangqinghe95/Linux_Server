@@ -11,25 +11,31 @@ public:
     MyChannel(EventLoop* _loop, int _fd);
     ~MyChannel();
 
-    void enableReading();
+    void enableRead();
 
     uint32_t getEvents();
     int getFd();
     bool getInEpoll();
-    uint32_t getRevetns();
+    uint32_t getReady();
 
     void handleEvent();
 
-    void setCallback(std::function<void()>);
-    void setInEpoll();
-    void setRevetns(uint32_t);
+    void useET();
+    void setInEpoll(bool _in = true);
+    void setReadCallback(std::function<void()>);
+    void setWriteCallback(std::function<void()>);
+    void setReady(uint32_t);
+    void setUseThreadPool(bool);
+    void setRevent(uint32_t);
 private:
     EventLoop *loop;
     int fd;
     uint32_t events;
-    uint32_t revents;
+    uint32_t ready;
     bool inEpoll;
-    std::function<void()> callback;
+    bool useThreadPool;
+    std::function<void()> readCallback;
+    std::function<void()> writeCallback;
 };
 
 #endif // !CHANNEL_HPP__

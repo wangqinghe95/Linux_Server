@@ -6,24 +6,31 @@
 #include "Buffer.hpp"
 #include <unistd.h>
 #include <cstring>
+#include <string>
 
 #define READ_BUFFER_SIZE 1024
 
 Connection::Connection(EventLoop *_loop, MySocket* _sock)
-                        : loop(_loop), sock(_sock), channel(nullptr)
+                        : loop(_loop)
+                        , sock(_sock)
+                        , channel(nullptr)
+                        , readBuffer(new Buffer())
+                        , inBuffer(new std::string())
 {
     INFO("fd:", sock->getFd());
     channel = new MyChannel(loop, sock->getFd());
     std::function<void()> cb = std::bind(&Connection::echo, this, sock->getFd());
-    channel->setCallback(cb);
-    channel->enableReading();
-    read_buff = new Buffer();
+    channel->setReadCallback(cb);
+    channel->useET();
+    channel->enableRead();
+    channel->setUseThreadPool(true);
 }
 
 Connection::~Connection()
 {
     delete channel;
     delete sock;
+    delete readBuffer;
 }
 
 void Connection::echo(int sockfd)
@@ -34,14 +41,12 @@ void Connection::echo(int sockfd)
         bzero(buf, sizeof(READ_BUFFER_SIZE));
         ssize_t read_bytes = read(sockfd, buf, sizeof(buf));
         if(read_bytes > 0) {
-            // DEBUG("message from client fd : ", sockfd, " message : ", buf);
-            // write(sockfd, buf, sizeof(buf));
-            read_buff->append(buf, read_bytes);
+            readBuffer->append(buf, read_bytes);
         }
         else if(read_bytes == 0) {
             DEBUG("EOF, client fd", sockfd, " disconnected\n");
-            close(sockfd);  // socked closed will be removed from epoll tree automatically
-            deleteConnectionCallback(sock);
+            // close(sockfd);  // socked closed will be removed from epoll tree automatically
+            deleteConnectionCallback(sockfd);
             break;
         }
         else {
@@ -52,14 +57,15 @@ void Connection::echo(int sockfd)
                 }
                 else if(errno == EAGAIN || errno == EWOULDBLOCK) {
                     // INFO("finish reading once, and res number : ", errno);
-                    DEBUG("message from client fd : ", sockfd, " message : ", read_buff->c_str());
+                    DEBUG("message from client fd : ", sockfd, " message : ", readBuffer->c_str());
                     /* When the Server receive all data from client
                      * it should be a callback function to parase request from client
                      * and to call different logic functions to response client
                     */
-                    
-                    int write_res = write(sockfd, read_buff->c_str(), read_buff->size());
-                    if(write_res == -1) ERROR("Write client:", sockfd, " error");
+                    send(sockfd);
+                    readBuffer->clear();
+                    // int write_res = write(sockfd, readBuffer->c_str(), readBuffer->size());
+                    // if(write_res == -1) ERROR("Write client:", sockfd, " error");
                     break;
                 }
                 else {
@@ -69,7 +75,22 @@ void Connection::echo(int sockfd)
         }
     }
 }
-void Connection::setDeleteConnectionCallback(std::function<void(MySocket*)> _cb)
+
+void Connection::send(int sockfd)
+{
+    int data_size = readBuffer->size();
+    char *buff = new char[data_size];
+    strcpy(buff, readBuffer->c_str());
+    int write_len = data_size;
+    while (write_len > 0)
+    {
+        ssize_t bytes_write = write(sockfd, buff+data_size-write_len,write_len);
+        if(bytes_write == -1  && errno == EAGAIN) break;
+        write_len -= bytes_write;
+    }
+}
+
+void Connection::setDeleteConnectionCallback(std::function<void(int)> _cb)
 {
     deleteConnectionCallback = _cb;
 }

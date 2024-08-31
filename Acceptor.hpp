@@ -14,14 +14,13 @@ private:
     MySocket* sock;
     // InetAddress* addr;
     MyChannel* acceptChannel;
+    std::function<void(MySocket*)> newConnectionCallback;
 public:
     Acceptor(EventLoop* _loop);
     ~Acceptor();
 
     void acceptConnection();
     void setNewConnectionCallback(std::function<void(MySocket*)>);
-
-    std::function<void(MySocket*)> newConnectionCallback;
 };
 
 #endif // !ACCEPTOR_HPP__

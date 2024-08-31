@@ -19,10 +19,6 @@ MySocket::MySocket(int _fd) : fd(_fd)
 MySocket::~MySocket()
 {
     DEBUG("~MySocket");
-    // if(fd != -1) {
-    //     close(fd);
-    //     fd = -1;
-    // }
 }
 
 void MySocket::bind(InetAddress* _addr)
@@ -41,6 +37,16 @@ void MySocket::bind(InetAddress* _addr)
         ERROR("socket bind error,fd",fd);
     }  
 }
+
+void MySocket::connect(InetAddress* _addr)
+{
+    struct sockaddr_in addr = _addr->getAddr();
+    int res = ::connect(fd, (sockaddr*)&addr, sizeof(addr));
+    if(-1 == res) {
+        ERROR("connect error, res:",res);
+    }
+}
+
 void MySocket::listen()
 {
     int listen_res = ::listen(fd, SOMAXCONN);

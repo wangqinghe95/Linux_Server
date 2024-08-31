@@ -14,10 +14,8 @@ public:
     ~MyEpoll();
     MyEpoll();
 
-    void addFd(int fd, uint32_t op);
-    void deleteFd(int fd);
+    void deleteChannel(MyChannel*);
     void updateChannel(MyChannel*);
-    // std::vector<epoll_event> poll(int timeout = -1);
     std::vector<MyChannel*> poll(int timeout = -1);
 };
 
